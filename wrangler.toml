@@ -1,0 +1,14 @@
+# 前后端一体部署到单个 Cloudflare Worker。
+# 前端构建产物（frontend/dist）由 Worker 的静态资源（assets）托管，
+# 仅 /v1/* API 请求先经过 Worker（run_worker_first），其余静态请求直接由
+# Cloudflare 静态资源服务，SPA 回退到 index.html。
+
+name = "tts-app"
+main = "worker/index.js"
+compatibility_date = "2024-11-01"
+
+[assets]
+directory = "./frontend/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/v1/*"]

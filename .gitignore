@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+
+# 环境变量（通过 .env.example 生成自己的副本）
+.env
+.env.local
+.env.production

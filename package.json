@@ -1,0 +1,17 @@
+{
+  "name": "tts-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "npm install --prefix frontend && npm install --prefix worker",
+    "dev:worker": "npm run --prefix worker dev",
+    "dev:frontend": "npm run --prefix frontend dev",
+    "build": "npm run --prefix frontend build",
+    "type-check": "npm run --prefix frontend type-check",
+    "lint": "npm run --prefix frontend lint",
+    "deploy": "npm run build && npm run --prefix worker deploy"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
