@@ -1,5 +1,6 @@
 // 后端 API 地址。
-// 开发环境默认同源（vite 代理到本地 worker），生产通过 .env.production 的 VITE_API_BASE 覆盖。
+// 生产与本地开发默认同源：@cloudflare/vite-plugin 在 vite dev 中同时运行前端与 Worker，
+// /v1 请求自动路由到本地 Worker。可通过 .env 的 VITE_API_BASE 覆盖指向其它 Worker。
 export const API_BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 
 export const VOICES = [
