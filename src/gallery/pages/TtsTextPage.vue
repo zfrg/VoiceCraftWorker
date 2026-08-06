@@ -96,6 +96,7 @@ import WinInfoBar from '../../components/WinInfoBar.vue';
 import { useI18n } from '../../components/i18n/index';
 import { synthesizeFromText } from '../../api/tts.ts';
 import { useTtsParams } from '../useTtsParams';
+import { VOICES, SPEEDS, PITCHES, STYLES } from '../../config';
 
 const { t } = useI18n();
 const { voiceItem, speedItem, pitchItem, styleItem, changeVoice, changeSpeed, changePitch, changeStyle, params } = useTtsParams();
