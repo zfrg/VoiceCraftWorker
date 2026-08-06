@@ -15,6 +15,36 @@
         TextWrapping="WrapWholeWords" />
     </div>
 
+    <div class="tts-controls">
+      <WinComboBox
+        class="tts-control"
+        :Header="t('text.voice')"
+        :ItemsSource="VOICES"
+        :SelectedItem="voiceItem"
+        @update:SelectedItem="changeVoice" />
+
+      <WinComboBox
+        class="tts-control"
+        :Header="t('text.speed')"
+        :ItemsSource="SPEEDS"
+        :SelectedItem="speedItem"
+        @update:SelectedItem="changeSpeed" />
+
+      <WinComboBox
+        class="tts-control"
+        :Header="t('text.pitch')"
+        :ItemsSource="PITCHES"
+        :SelectedItem="pitchItem"
+        @update:SelectedItem="changePitch" />
+
+      <WinComboBox
+        class="tts-control"
+        :Header="t('text.style')"
+        :ItemsSource="STYLES"
+        :SelectedItem="styleItem"
+        @update:SelectedItem="changeStyle" />
+    </div>
+
     <WinButton
       class="tts-generate"
       Style="AccentButtonStyle"
@@ -58,15 +88,16 @@
 <script setup>
 import { ref } from 'vue';
 import WinTextBox from '../../components/WinTextBox.vue';
+import WinComboBox from '../../components/WinComboBox.vue';
 import WinButton from '../../components/WinButton.vue';
 import WinProgressRing from '../../components/WinProgressRing.vue';
 import WinInfoBar from '../../components/WinInfoBar.vue';
 import { useI18n } from '../../components/i18n/index';
 import { synthesizeFromText } from '../../api/tts.ts';
-import { useSettings } from '../settings';
+import { useTtsParams } from '../useTtsParams';
 
 const { t } = useI18n();
-const { settings } = useSettings();
+const { voiceItem, speedItem, pitchItem, styleItem, changeVoice, changeSpeed, changePitch, changeStyle, params } = useTtsParams();
 
 const text = ref('');
 const isGenerating = ref(false);
@@ -93,12 +124,7 @@ async function onGenerate() {
   try {
     const len = text.value.length;
     loadingText.value = len > 3000 ? '正在处理长文本，请耐心等待...' : t('text.loading');
-    const blob = await synthesizeFromText(text.value, {
-      voice: settings.value.voice,
-      speed: settings.value.speed,
-      pitch: settings.value.pitch,
-      style: settings.value.style
-    });
+    const blob = await synthesizeFromText(text.value, params.value);
     audioUrl.value = URL.createObjectURL(blob);
     successMessage.value = '生成成功';
   } catch (err) {
@@ -134,6 +160,17 @@ function onDownload() {
 
 .tts-field {
   margin-bottom: 20px;
+}
+
+.tts-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.tts-control {
+  width: 100%;
 }
 
 .tts-generate {
