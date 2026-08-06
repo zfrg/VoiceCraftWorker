@@ -134,6 +134,7 @@ type TextBoxMenuItem = {
   Text?: string;
   Icon?: string;
   Value?: TextBoxMenuCommand;
+  IsEnabled?: boolean;
 };
 
 const props = withDefaults(defineProps<{
@@ -222,7 +223,6 @@ const isHovered = ref(false);
 const localText = ref(props.Text ?? '');
 const undoStack = ref<string[]>([]);
 const redoStack = ref<string[]>([]);
-const clipboardText = ref('');
 const contextMenuOpen = ref(false);
 const isRestoringContextMenuFocus = ref(false);
 const contextMenuAnchor = ref<DOMRect | {
@@ -320,16 +320,10 @@ const contextMenuItems = computed<TextBoxMenuItem[]>(() => {
   const hasSelection = contextSelection.value.length > 0;
   const hasText = currentText.value.length > 0;
   const canEdit = !props.IsReadOnly && props.IsEnabled;
-  const canPaste = canEdit && clipboardText.value.length > 0;
 
-  if (hasSelection) {
-    if (canEdit) items.push({ Text: t('text.cut'), Icon: '\uE8C6', Value: 'cut' });
-    items.push({ Text: t('text.copy'), Icon: '\uE8C8', Value: 'copy' });
-  }
-
-  if (canPaste) {
-    items.push({ Text: t('text.paste'), Icon: '\uE77F', Value: 'paste' });
-  }
+  items.push({ Text: t('text.cut'), Icon: '\uE8C6', Value: 'cut', IsEnabled: canEdit && hasSelection });
+  items.push({ Text: t('text.copy'), Icon: '\uE8C8', Value: 'copy', IsEnabled: hasSelection });
+  items.push({ Text: t('text.paste'), Icon: '\uE77F', Value: 'paste', IsEnabled: canEdit });
 
   if (canUndo.value) {
     items.push({ Text: t('text.undo'), Icon: '\uE7A7', Value: 'undo' });
@@ -471,21 +465,12 @@ const onPaste = (event: ClipboardEvent) => {
   if (args.Handled) event.preventDefault();
 };
 
-const readClipboardText = async () => {
-  try {
-    return await navigator.clipboard?.readText() ?? '';
-  } catch {
-    return '';
-  }
-};
-
-const onContextMenu = async (event: MouseEvent) => {
+const onContextMenu = (event: MouseEvent) => {
   event.preventDefault();
   if (isDisabled.value) return;
 
   contextMenuOpen.value = false;
   contextSelection.value = readSelection();
-  clipboardText.value = await readClipboardText();
 
   if (!contextMenuItems.value.length) return;
 

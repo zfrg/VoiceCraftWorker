@@ -9,11 +9,13 @@
       :IsSettingsVisible="true"
       :IsPaneToggleButtonVisible="true"
       @update:SelectedItem="onNavChange">
-      <div class="app-page">
-        <TtsTextPage v-if="selectedNav === 'text'" />
-        <TtsFilePage v-else-if="selectedNav === 'file'" />
-        <SettingsPage v-else />
-      </div>
+      <Transition mode="out-in" :enter-active-class="enterClass" :leave-active-class="leaveClass">
+        <div class="app-page" :key="selectedNav">
+          <TtsTextPage v-if="selectedNav === 'text'" />
+          <TtsFilePage v-else-if="selectedNav === 'file'" />
+          <SettingsPage v-else />
+        </div>
+      </Transition>
     </WinNavigationView>
   </div>
 </template>
@@ -51,11 +53,25 @@ provide('isHostedInUwpWebView', isHostedInUwpWebView);
 const appTitle = computed(() => t(appManifest.resources?.title ?? 'app.title'));
 
 const menuItems = computed(() => [
-  { Content: t('text.nav-text'), Tag: 'text', Icon: '\uE8DB' },
-  { Content: t('text.nav-file'), Tag: 'file', Icon: '\uE8B5' }
+  { Content: t('text.nav-text'), Tag: 'text', Icon: '\uE8D2' },
+  { Content: t('text.nav-file'), Tag: 'file', Icon: '\uE8A5' }
 ]);
 
+const pageOrder = { text: 0, file: 1, settings: 2 };
+
 const selectedNav = ref('text');
+const navDirection = ref(1);
+
+const enterClass = computed(() =>
+  navDirection.value >= 0
+    ? 'EntranceNavigationTransitionInfo'
+    : 'EntranceNavigationTransitionInfo NavigationTrigger_BackNavigatingTo'
+);
+const leaveClass = computed(() =>
+  navDirection.value >= 0
+    ? 'EntranceNavigationTransitionInfo NavigationTrigger_NavigatingAway'
+    : 'EntranceNavigationTransitionInfo NavigationTrigger_BackNavigatingAway'
+);
 
 function applyTheme(mode) {
   const html = document.documentElement;
@@ -88,10 +104,16 @@ onMounted(() => {
 
 function onNavChange(value) {
   if (value === 'settings') {
-    selectedNav.value = 'settings';
+    navigateTo('settings');
     return;
   }
-  if (value && selectedNav.value !== value) selectedNav.value = value;
+  if (value) navigateTo(value);
+}
+
+function navigateTo(value) {
+  if (!(value in pageOrder) || value === selectedNav.value) return;
+  navDirection.value = pageOrder[value] >= pageOrder[selectedNav.value] ? 1 : -1;
+  selectedNav.value = value;
 }
 </script>
 
