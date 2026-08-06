@@ -1,36 +1,11 @@
 <template>
   <div class="tts-page">
     <div class="tts-hero">
-      <h1 class="page-header">{{ t('text.tts') }}</h1>
-      <p class="tts-description">{{ t('text.app-description') }}</p>
+      <h1 class="page-header">{{ t('text.file-tts') }}</h1>
+      <p class="tts-description">{{ t('text.file-description') }}</p>
     </div>
 
-    <div class="tts-input-tabs" role="tablist">
-      <button
-        class="tts-input-tab"
-        :class="{ active: inputMode === 'text' }"
-        @click="inputMode = 'text'">
-        {{ t('text.tab-text') }}
-      </button>
-      <button
-        class="tts-input-tab"
-        :class="{ active: inputMode === 'file' }"
-        @click="inputMode = 'file'">
-        {{ t('text.tab-file') }}
-      </button>
-    </div>
-
-    <div v-if="inputMode === 'text'" class="tts-field">
-      <WinTextBox
-        v-model:text="text"
-        :Header="t('text.input-text')"
-        :PlaceholderText="t('text.input-placeholder')"
-        AcceptsReturn
-        :MinHeight="160"
-        TextWrapping="WrapWholeWords" />
-    </div>
-
-    <div v-else class="tts-field">
+    <div class="tts-field">
       <div
         class="tts-drop-zone"
         :class="{ dragover: dragOver }"
@@ -48,36 +23,6 @@
           @change="onFileChange" />
       </div>
       <p v-if="fileName" class="tts-file-name">{{ fileName }} ({{ fileSize }})</p>
-    </div>
-
-    <div class="tts-controls">
-      <WinComboBox
-        class="tts-control"
-        :Header="t('text.voice')"
-        :ItemsSource="VOICES"
-        :SelectedItem="voiceItem"
-        @update:SelectedItem="onVoiceChange" />
-
-      <WinComboBox
-        class="tts-control"
-        :Header="t('text.speed')"
-        :ItemsSource="SPEEDS"
-        :SelectedItem="speedItem"
-        @update:SelectedItem="onSpeedChange" />
-
-      <WinComboBox
-        class="tts-control"
-        :Header="t('text.pitch')"
-        :ItemsSource="PITCHES"
-        :SelectedItem="pitchItem"
-        @update:SelectedItem="onPitchChange" />
-
-      <WinComboBox
-        class="tts-control"
-        :Header="t('text.style')"
-        :ItemsSource="STYLES"
-        :SelectedItem="styleItem"
-        @update:SelectedItem="onStyleChange" />
     </div>
 
     <WinButton
@@ -121,20 +66,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import WinTextBox from '../../components/WinTextBox.vue';
-import WinComboBox from '../../components/WinComboBox.vue';
+import { ref } from 'vue';
 import WinButton from '../../components/WinButton.vue';
 import WinProgressRing from '../../components/WinProgressRing.vue';
 import WinInfoBar from '../../components/WinInfoBar.vue';
 import { useI18n } from '../../components/i18n/index';
-import { VOICES, SPEEDS, PITCHES, STYLES } from '../../config.ts';
-import { synthesizeFromText, synthesizeFromFile } from '../../api/tts.ts';
+import { synthesizeFromFile } from '../../api/tts.ts';
+import { useSettings } from '../settings';
 
 const { t } = useI18n();
+const { settings } = useSettings();
 
-const inputMode = ref('text');
-const text = ref('');
 const fileName = ref('');
 const fileSize = ref('');
 const selectedFile = ref(null);
@@ -146,23 +88,6 @@ const loadingText = ref(t('text.loading'));
 const errorMessage = ref('');
 const successMessage = ref('');
 const audioUrl = ref(null);
-
-const voiceItem = ref(VOICES[0]);
-const speedItem = ref(SPEEDS[2]);
-const pitchItem = ref(PITCHES[2]);
-const styleItem = ref(STYLES[0]);
-
-const currentParams = computed(() => ({
-  voice: voiceItem.value?.value ?? VOICES[0].value,
-  speed: speedItem.value?.value ?? '1.0',
-  pitch: pitchItem.value?.value ?? '0',
-  style: styleItem.value?.value ?? 'general'
-}));
-
-function onVoiceChange(item) { if (item) voiceItem.value = item; }
-function onSpeedChange(item) { if (item) speedItem.value = item; }
-function onPitchChange(item) { if (item) pitchItem.value = item; }
-function onStyleChange(item) { if (item) styleItem.value = item; }
 
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';
@@ -204,12 +129,7 @@ async function onGenerate() {
   errorMessage.value = '';
   successMessage.value = '';
 
-  if (inputMode.value === 'text') {
-    if (!text.value.trim()) {
-      alert(t('text.error-empty'));
-      return;
-    }
-  } else if (!selectedFile.value) {
+  if (!selectedFile.value) {
     alert('请选择要上传的txt文件');
     return;
   }
@@ -221,15 +141,13 @@ async function onGenerate() {
   }
 
   try {
-    let blob;
-    if (inputMode.value === 'text') {
-      const len = text.value.length;
-      loadingText.value = len > 3000 ? '正在处理长文本，请耐心等待...' : t('text.loading');
-      blob = await synthesizeFromText(text.value, currentParams.value);
-    } else {
-      loadingText.value = '正在处理上传的文件...';
-      blob = await synthesizeFromFile(selectedFile.value, currentParams.value);
-    }
+    loadingText.value = '正在处理上传的文件...';
+    const blob = await synthesizeFromFile(selectedFile.value, {
+      voice: settings.value.voice,
+      speed: settings.value.speed,
+      pitch: settings.value.pitch,
+      style: settings.value.style
+    });
     audioUrl.value = URL.createObjectURL(blob);
     successMessage.value = '生成成功';
   } catch (err) {
@@ -261,32 +179,6 @@ function onDownload() {
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 20px;
-}
-
-.tts-input-tabs {
-  display: inline-flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding: 3px;
-  background: var(--control-fill-color-secondary);
-  border-radius: 6px;
-}
-
-.tts-input-tab {
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  padding: 8px 20px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.tts-input-tab.active {
-  background: var(--control-fill-color-default);
-  color: var(--text-primary);
 }
 
 .tts-field {
@@ -327,17 +219,6 @@ function onDownload() {
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 500;
-}
-
-.tts-controls {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.tts-control {
-  width: 100%;
 }
 
 .tts-generate {
