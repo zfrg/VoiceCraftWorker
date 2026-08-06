@@ -131,7 +131,7 @@ function onNavChange(value) {
 function navigateTo(value) {
   if (!(value in pageOrder) || value === selectedNav.value) return;
   selectedNav.value = value;
-  restartTransitionClass(createEntranceNavigationTransitionInfo());
+  restartTransition(createEntranceNavigationTransitionInfo());
 }
 </script>
 
@@ -182,9 +182,26 @@ function navigateTo(value) {
   }
 
   .app-page {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 32px 24px 64px;
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 36px 36px;
+  }
+
+  .app-page .page-header {
+    font-size: 28px;
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 24px;
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 640px) {
+    .app-page {
+      padding: 12px 16px 16px;
+    }
   }
 
   @font-face {

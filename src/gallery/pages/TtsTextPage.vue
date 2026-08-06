@@ -1,8 +1,8 @@
 <template>
   <div class="tts-page">
     <div class="tts-hero">
-      <h1 class="page-header">{{ t('text.tts') }}</h1>
-      <p class="tts-description">{{ t('text.app-description') }}</p>
+      <WinTextBlock class="page-header" :Text="t('text.tts')" />
+      <WinTextBlock class="tts-description" :Text="t('text.app-description')" />
     </div>
 
     <div class="tts-field">
@@ -88,6 +88,7 @@
 <script setup>
 import { ref } from 'vue';
 import WinTextBox from '../../components/WinTextBox.vue';
+import WinTextBlock from '../../components/WinTextBlock.vue';
 import WinComboBox from '../../components/WinComboBox.vue';
 import WinButton from '../../components/WinButton.vue';
 import WinProgressRing from '../../components/WinProgressRing.vue';
@@ -152,7 +153,7 @@ function onDownload() {
 
 <style scoped>
 .tts-hero {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .tts-description {
