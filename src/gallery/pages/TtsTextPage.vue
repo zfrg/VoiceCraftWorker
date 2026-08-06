@@ -1,8 +1,8 @@
 <template>
   <div class="tts-page">
     <div class="tts-hero">
-      <h1 class="page-header">{{ t('text.tts') }}</h1>
-      <p class="tts-description">{{ t('text.app-description') }}</p>
+      <WinTextBlock class="page-header" :Text="t('text.tts')" />
+      <WinTextBlock class="tts-description" :Text="t('text.app-description')" />
     </div>
 
     <div class="tts-field">
@@ -58,13 +58,13 @@
     </div>
 
     <WinInfoBar
-      v-if="errorMessage"
-      :IsOpen="!!errorMessage"
+      v-if="errorTitle || errorMessage"
+      :IsOpen="!!(errorTitle || errorMessage)"
       Severity="Error"
-      :Title="t('text.error-empty')"
+      :Title="errorTitle || t('text.error-empty')"
       :Message="errorMessage"
       IsClosable
-      @update:IsOpen="errorMessage = ''" />
+      @update:IsOpen="errorTitle = ''; errorMessage = ''" />
 
     <WinInfoBar
       v-if="successMessage"
@@ -88,6 +88,7 @@
 <script setup>
 import { ref } from 'vue';
 import WinTextBox from '../../components/WinTextBox.vue';
+import WinTextBlock from '../../components/WinTextBlock.vue';
 import WinComboBox from '../../components/WinComboBox.vue';
 import WinButton from '../../components/WinButton.vue';
 import WinProgressRing from '../../components/WinProgressRing.vue';
@@ -95,6 +96,7 @@ import WinInfoBar from '../../components/WinInfoBar.vue';
 import { useI18n } from '../../components/i18n/index';
 import { synthesizeFromText } from '../../api/tts.ts';
 import { useTtsParams } from '../useTtsParams';
+import { VOICES, SPEEDS, PITCHES, STYLES } from '../../config';
 
 const { t } = useI18n();
 const { voiceItem, speedItem, pitchItem, styleItem, changeVoice, changeSpeed, changePitch, changeStyle, params } = useTtsParams();
@@ -102,16 +104,19 @@ const { voiceItem, speedItem, pitchItem, styleItem, changeVoice, changeSpeed, ch
 const text = ref('');
 const isGenerating = ref(false);
 const loadingText = ref(t('text.loading'));
+const errorTitle = ref('');
 const errorMessage = ref('');
 const successMessage = ref('');
 const audioUrl = ref(null);
 
 async function onGenerate() {
+  errorTitle.value = '';
   errorMessage.value = '';
   successMessage.value = '';
 
   if (!text.value.trim()) {
-    alert(t('text.error-empty'));
+    errorTitle.value = t('text.error-empty');
+    errorMessage.value = '';
     return;
   }
 
@@ -123,12 +128,12 @@ async function onGenerate() {
 
   try {
     const len = text.value.length;
-    loadingText.value = len > 3000 ? '正在处理长文本，请耐心等待...' : t('text.loading');
+    loadingText.value = len > 3000 ? t('text.processing-long') : t('text.loading');
     const blob = await synthesizeFromText(text.value, params.value);
     audioUrl.value = URL.createObjectURL(blob);
-    successMessage.value = '生成成功';
+    successMessage.value = t('text.success');
   } catch (err) {
-    errorMessage.value = err.message || '生成失败';
+    errorMessage.value = err.message || t('text.error-failed');
   } finally {
     isGenerating.value = false;
     loadingText.value = t('text.loading');
@@ -137,9 +142,10 @@ async function onGenerate() {
 
 function onDownload() {
   if (!audioUrl.value) return;
+  const base = (text.value.trim().slice(0, 12) || 'speech').replace(/[\\/:*?"<>|]+/g, '').trim() || 'speech';
   const a = document.createElement('a');
   a.href = audioUrl.value;
-  a.download = 'speech.mp3';
+  a.download = `${base}.mp3`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -148,7 +154,7 @@ function onDownload() {
 
 <style scoped>
 .tts-hero {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .tts-description {

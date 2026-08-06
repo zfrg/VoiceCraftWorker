@@ -9,24 +9,39 @@
       :IsSettingsVisible="true"
       :IsPaneToggleButtonVisible="true"
       @update:SelectedItem="onNavChange">
-      <div class="app-page">
-        <TtsTextPage v-if="selectedNav === 'text'" />
-        <TtsFilePage v-else-if="selectedNav === 'file'" />
-        <SettingsPage v-else />
+      <div class="page-view" :class="transitionClass">
+        <WinScrollViewer
+          ref="pageScroller"
+          class="app-page-scroll"
+          VerticalScrollMode="Auto"
+          VerticalScrollBarVisibility="Auto"
+          HorizontalScrollMode="Disabled"
+          HorizontalScrollBarVisibility="Disabled">
+          <div class="app-page">
+            <TtsTextPage v-if="selectedNav === 'text'" />
+            <TtsFilePage v-else-if="selectedNav === 'file'" />
+            <SettingsPage v-else />
+          </div>
+        </WinScrollViewer>
       </div>
     </WinNavigationView>
   </div>
 </template>
 
 <script setup>
-import { ref, provide, computed, watch, onMounted } from 'vue';
+import { ref, provide, computed, watch, nextTick, onMounted } from 'vue';
 import WinTitleBar from '../components/WinTitleBar.vue';
 import WinToolTipService from '../components/WinToolTipService.vue';
 import WinNavigationView from '../components/WinNavigationView.vue';
+import WinScrollViewer from '../components/WinScrollViewer.vue';
 import TtsTextPage from './pages/TtsTextPage.vue';
 import TtsFilePage from './pages/TtsFilePage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
 import appManifest from '../manifest.json';
+import {
+  createEntranceNavigationTransitionInfo,
+  getNavigationTransitionInfoClassName
+} from '../utils/navigationTransitionInfo';
 
 import { useI18n } from '../components/i18n/index';
 
@@ -51,11 +66,30 @@ provide('isHostedInUwpWebView', isHostedInUwpWebView);
 const appTitle = computed(() => t(appManifest.resources?.title ?? 'app.title'));
 
 const menuItems = computed(() => [
-  { Content: t('text.nav-text'), Tag: 'text', Icon: '\uE8DB' },
-  { Content: t('text.nav-file'), Tag: 'file', Icon: '\uE8B5' }
+  { Content: t('text.nav-text'), Tag: 'text', Icon: '\uE8D2' },
+  { Content: t('text.nav-file'), Tag: 'file', Icon: '\uE8A5' }
 ]);
 
+const pageOrder = { text: 0, file: 1, settings: 2 };
+
 const selectedNav = ref('text');
+const pageScroller = ref(null);
+const transitionClass = ref(getNavigationTransitionInfoClassName(createEntranceNavigationTransitionInfo()));
+let transitionSequence = 0;
+
+function restartTransition(info) {
+  const nextClass = getNavigationTransitionInfoClassName(info);
+  const sequence = ++transitionSequence;
+  transitionClass.value = '';
+  nextTick(() => {
+    pageScroller.value?.ChangeView?.(0, 0, null);
+    const restart = () => {
+      if (sequence === transitionSequence) transitionClass.value = nextClass;
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(restart);
+    else restart();
+  });
+}
 
 function applyTheme(mode) {
   const html = document.documentElement;
@@ -88,10 +122,16 @@ onMounted(() => {
 
 function onNavChange(value) {
   if (value === 'settings') {
-    selectedNav.value = 'settings';
+    navigateTo('settings');
     return;
   }
-  if (value && selectedNav.value !== value) selectedNav.value = value;
+  if (value) navigateTo(value);
+}
+
+function navigateTo(value) {
+  if (!(value in pageOrder) || value === selectedNav.value) return;
+  selectedNav.value = value;
+  restartTransition(createEntranceNavigationTransitionInfo());
 }
 </script>
 
@@ -117,10 +157,51 @@ function onNavChange(value) {
     width: 100%;
   }
 
+  .app-navigation-view .win-nav-content-inner {
+    position: relative;
+  }
+
+  .app-navigation-view .page-view {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .app-navigation-view .page-view .app-page-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    min-width: 0;
+  }
+
   .app-page {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 32px 24px 64px;
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 36px 36px;
+  }
+
+  .app-page .page-header {
+    font-size: 28px;
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 24px;
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 640px) {
+    .app-page {
+      padding: 12px 16px 16px;
+    }
   }
 
   @font-face {

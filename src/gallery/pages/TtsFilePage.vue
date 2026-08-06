@@ -1,8 +1,8 @@
 <template>
   <div class="tts-page">
     <div class="tts-hero">
-      <h1 class="page-header">{{ t('text.file-tts') }}</h1>
-      <p class="tts-description">{{ t('text.file-description') }}</p>
+      <WinTextBlock class="page-header" :Text="t('text.file-tts')" />
+      <WinTextBlock class="tts-description" :Text="t('text.file-description')" />
     </div>
 
     <div class="tts-field">
@@ -68,13 +68,13 @@
     </div>
 
     <WinInfoBar
-      v-if="errorMessage"
-      :IsOpen="!!errorMessage"
+      v-if="errorTitle || errorMessage"
+      :IsOpen="!!(errorTitle || errorMessage)"
       Severity="Error"
-      :Title="t('text.error-empty')"
+      :Title="errorTitle || t('text.error-empty')"
       :Message="errorMessage"
       IsClosable
-      @update:IsOpen="errorMessage = ''" />
+      @update:IsOpen="errorTitle = ''; errorMessage = ''" />
 
     <WinInfoBar
       v-if="successMessage"
@@ -98,12 +98,14 @@
 <script setup>
 import { ref } from 'vue';
 import WinComboBox from '../../components/WinComboBox.vue';
+import WinTextBlock from '../../components/WinTextBlock.vue';
 import WinButton from '../../components/WinButton.vue';
 import WinProgressRing from '../../components/WinProgressRing.vue';
 import WinInfoBar from '../../components/WinInfoBar.vue';
 import { useI18n } from '../../components/i18n/index';
 import { synthesizeFromFile } from '../../api/tts.ts';
 import { useTtsParams } from '../useTtsParams';
+import { VOICES, SPEEDS, PITCHES, STYLES } from '../../config';
 
 const { t } = useI18n();
 const { voiceItem, speedItem, pitchItem, styleItem, changeVoice, changeSpeed, changePitch, changeStyle, params } = useTtsParams();
@@ -116,6 +118,7 @@ const fileInput = ref(null);
 
 const isGenerating = ref(false);
 const loadingText = ref(t('text.loading'));
+const errorTitle = ref('');
 const errorMessage = ref('');
 const successMessage = ref('');
 const audioUrl = ref(null);
@@ -133,11 +136,13 @@ function handleFile(file) {
     (file.type && file.type.includes('text/')) ||
     file.name.toLowerCase().endsWith('.txt');
   if (!isTxt) {
-    alert('请选择txt格式的文本文件');
+    errorTitle.value = t('text.error-file-type');
+    errorMessage.value = '';
     return;
   }
   if (file.size > 500 * 1024) {
-    alert('文件大小不能超过500KB');
+    errorTitle.value = t('text.error-file-size');
+    errorMessage.value = '';
     return;
   }
   selectedFile.value = file;
@@ -157,11 +162,13 @@ function onDrop(e) {
 }
 
 async function onGenerate() {
+  errorTitle.value = '';
   errorMessage.value = '';
   successMessage.value = '';
 
   if (!selectedFile.value) {
-    alert('请选择要上传的txt文件');
+    errorTitle.value = t('text.error-file-empty');
+    errorMessage.value = '';
     return;
   }
 
@@ -172,12 +179,12 @@ async function onGenerate() {
   }
 
   try {
-    loadingText.value = '正在处理上传的文件...';
+    loadingText.value = t('text.processing-file');
     const blob = await synthesizeFromFile(selectedFile.value, params.value);
     audioUrl.value = URL.createObjectURL(blob);
-    successMessage.value = '生成成功';
+    successMessage.value = t('text.success');
   } catch (err) {
-    errorMessage.value = err.message || '生成失败';
+    errorMessage.value = err.message || t('text.error-failed');
   } finally {
     isGenerating.value = false;
     loadingText.value = t('text.loading');
@@ -186,9 +193,10 @@ async function onGenerate() {
 
 function onDownload() {
   if (!audioUrl.value) return;
+  const base = (fileName.value || 'speech').replace(/\.txt$/i, '').trim() || 'speech';
   const a = document.createElement('a');
   a.href = audioUrl.value;
-  a.download = 'speech.mp3';
+  a.download = `${base}.mp3`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -197,7 +205,7 @@ function onDownload() {
 
 <style scoped>
 .tts-hero {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .tts-description {
