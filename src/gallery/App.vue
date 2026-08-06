@@ -9,26 +9,39 @@
       :IsSettingsVisible="true"
       :IsPaneToggleButtonVisible="true"
       @update:SelectedItem="onNavChange">
-      <Transition mode="out-in" :enter-active-class="enterClass" :leave-active-class="leaveClass">
-        <div class="app-page" :key="selectedNav">
-          <TtsTextPage v-if="selectedNav === 'text'" />
-          <TtsFilePage v-else-if="selectedNav === 'file'" />
-          <SettingsPage v-else />
-        </div>
-      </Transition>
+      <div class="page-view" :class="transitionClass">
+        <WinScrollViewer
+          ref="pageScroller"
+          class="app-page-scroll"
+          VerticalScrollMode="Auto"
+          VerticalScrollBarVisibility="Auto"
+          HorizontalScrollMode="Disabled"
+          HorizontalScrollBarVisibility="Disabled">
+          <div class="app-page">
+            <TtsTextPage v-if="selectedNav === 'text'" />
+            <TtsFilePage v-else-if="selectedNav === 'file'" />
+            <SettingsPage v-else />
+          </div>
+        </WinScrollViewer>
+      </div>
     </WinNavigationView>
   </div>
 </template>
 
 <script setup>
-import { ref, provide, computed, watch, onMounted } from 'vue';
+import { ref, provide, computed, watch, nextTick, onMounted } from 'vue';
 import WinTitleBar from '../components/WinTitleBar.vue';
 import WinToolTipService from '../components/WinToolTipService.vue';
 import WinNavigationView from '../components/WinNavigationView.vue';
+import WinScrollViewer from '../components/WinScrollViewer.vue';
 import TtsTextPage from './pages/TtsTextPage.vue';
 import TtsFilePage from './pages/TtsFilePage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
 import appManifest from '../manifest.json';
+import {
+  createEntranceNavigationTransitionInfo,
+  getNavigationTransitionInfoClassName
+} from '../utils/navigationTransitionInfo';
 
 import { useI18n } from '../components/i18n/index';
 
@@ -60,18 +73,23 @@ const menuItems = computed(() => [
 const pageOrder = { text: 0, file: 1, settings: 2 };
 
 const selectedNav = ref('text');
-const navDirection = ref(1);
+const pageScroller = ref(null);
+const transitionClass = ref(getNavigationTransitionInfoClassName(createEntranceNavigationTransitionInfo()));
+let transitionSequence = 0;
 
-const enterClass = computed(() =>
-  navDirection.value >= 0
-    ? 'EntranceNavigationTransitionInfo'
-    : 'EntranceNavigationTransitionInfo NavigationTrigger_BackNavigatingTo'
-);
-const leaveClass = computed(() =>
-  navDirection.value >= 0
-    ? 'EntranceNavigationTransitionInfo NavigationTrigger_NavigatingAway'
-    : 'EntranceNavigationTransitionInfo NavigationTrigger_BackNavigatingAway'
-);
+function restartTransition(info) {
+  const nextClass = getNavigationTransitionInfoClassName(info);
+  const sequence = ++transitionSequence;
+  transitionClass.value = '';
+  nextTick(() => {
+    pageScroller.value?.ChangeView?.(0, 0, null);
+    const restart = () => {
+      if (sequence === transitionSequence) transitionClass.value = nextClass;
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(restart);
+    else restart();
+  });
+}
 
 function applyTheme(mode) {
   const html = document.documentElement;
@@ -112,8 +130,8 @@ function onNavChange(value) {
 
 function navigateTo(value) {
   if (!(value in pageOrder) || value === selectedNav.value) return;
-  navDirection.value = pageOrder[value] >= pageOrder[selectedNav.value] ? 1 : -1;
   selectedNav.value = value;
+  restartTransitionClass(createEntranceNavigationTransitionInfo());
 }
 </script>
 
@@ -137,6 +155,30 @@ function navigateTo(value) {
   .app-navigation-view {
     height: 100%;
     width: 100%;
+  }
+
+  .app-navigation-view .win-nav-content-inner {
+    position: relative;
+  }
+
+  .app-navigation-view .page-view {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .app-navigation-view .page-view .app-page-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    min-width: 0;
   }
 
   .app-page {
