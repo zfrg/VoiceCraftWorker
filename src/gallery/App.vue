@@ -2,11 +2,19 @@
   <WinTitleBar :title="appTitle" :theme="themeSetting" />
   <WinToolTipService />
   <div class="gallery-app-content" :class="{ 'has-titlebar': titleBarActive || isHostedInUwpWebView }">
-    <div class="app-shell">
-      <main class="app-page">
-        <TtsPage />
-      </main>
-    </div>
+    <WinNavigationView
+      class="app-navigation-view"
+      :MenuItems="menuItems"
+      :SelectedItem="selectedNav"
+      :IsSettingsVisible="true"
+      :IsPaneToggleButtonVisible="true"
+      @update:SelectedItem="onNavChange">
+      <div class="app-page">
+        <TtsTextPage v-if="selectedNav === 'text'" />
+        <TtsFilePage v-else-if="selectedNav === 'file'" />
+        <SettingsPage v-else />
+      </div>
+    </WinNavigationView>
   </div>
 </template>
 
@@ -14,7 +22,10 @@
 import { ref, provide, computed, watch, onMounted } from 'vue';
 import WinTitleBar from '../components/WinTitleBar.vue';
 import WinToolTipService from '../components/WinToolTipService.vue';
-import TtsPage from './pages/TtsPage.vue';
+import WinNavigationView from '../components/WinNavigationView.vue';
+import TtsTextPage from './pages/TtsTextPage.vue';
+import TtsFilePage from './pages/TtsFilePage.vue';
+import SettingsPage from './pages/SettingsPage.vue';
 import appManifest from '../manifest.json';
 
 import { useI18n } from '../components/i18n/index';
@@ -38,6 +49,13 @@ provide('materialSetting', materialSetting);
 provide('isHostedInUwpWebView', isHostedInUwpWebView);
 
 const appTitle = computed(() => t(appManifest.resources?.title ?? 'app.title'));
+
+const menuItems = computed(() => [
+  { Content: t('text.nav-text'), Tag: 'text', Icon: '\uE8DB' },
+  { Content: t('text.nav-file'), Tag: 'file', Icon: '\uE8B5' }
+]);
+
+const selectedNav = ref('text');
 
 function applyTheme(mode) {
   const html = document.documentElement;
@@ -67,6 +85,14 @@ onMounted(() => {
   postUwpSetting('theme', themeSetting.value);
   postUwpSetting('material', materialSetting.value);
 });
+
+function onNavChange(value) {
+  if (value === 'settings') {
+    selectedNav.value = 'settings';
+    return;
+  }
+  if (value && selectedNav.value !== value) selectedNav.value = value;
+}
 </script>
 
 <style>
@@ -86,10 +112,9 @@ onMounted(() => {
     margin-top: var(--gallery-titlebar-height);
   }
 
-  .app-shell {
-    width: 100%;
+  .app-navigation-view {
     height: 100%;
-    overflow: auto;
+    width: 100%;
   }
 
   .app-page {
