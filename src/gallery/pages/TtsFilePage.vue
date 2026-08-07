@@ -1,7 +1,6 @@
 <template>
   <div class="tts-page">
     <div class="tts-hero">
-      <WinTextBlock class="page-header" :Text="t('text.file-tts')" />
       <WinTextBlock class="tts-description" :Text="t('text.file-description')" />
     </div>
 
@@ -209,7 +208,7 @@ function onDownload() {
 }
 
 .tts-description {
-  margin: -12px 0 0 0;
+  margin: 0;
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 20px;
