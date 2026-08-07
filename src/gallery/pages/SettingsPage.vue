@@ -1,7 +1,5 @@
 <template>
   <div class="settings-page">
-    <WinTextBlock class="page-header" :Text="t('text.settings')" />
-
     <WinTextBlock class="settings-section-title" :Text="t('text.settings-section-tts')" />
     <div class="settings-controls">
       <WinSettingsCard :Header="t('text.voice')" :Description="t('text.voice-description')" :Height="70">

@@ -10,6 +10,7 @@
       :IsPaneToggleButtonVisible="true"
       @update:SelectedItem="onNavChange">
       <div class="page-view" :class="transitionClass">
+        <WinTextBlock class="page-header" :Text="pageTitle" />
         <WinScrollViewer
           ref="pageScroller"
           class="app-page-scroll"
@@ -34,6 +35,7 @@ import WinTitleBar from '../components/WinTitleBar.vue';
 import WinToolTipService from '../components/WinToolTipService.vue';
 import WinNavigationView from '../components/WinNavigationView.vue';
 import WinScrollViewer from '../components/WinScrollViewer.vue';
+import WinTextBlock from '../components/WinTextBlock.vue';
 import TtsTextPage from './pages/TtsTextPage.vue';
 import TtsFilePage from './pages/TtsFilePage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
@@ -71,6 +73,17 @@ const menuItems = computed(() => [
 ]);
 
 const pageOrder = { text: 0, file: 1, settings: 2 };
+
+const pageTitle = computed(() => {
+  switch (selectedNav.value) {
+    case 'text':
+      return t('text.tts');
+    case 'file':
+      return t('text.file-tts');
+    default:
+      return t('text.settings');
+  }
+});
 
 const selectedNav = ref('text');
 const pageScroller = ref(null);
@@ -174,6 +187,17 @@ function navigateTo(value) {
     overflow: hidden;
   }
 
+  .app-navigation-view .page-view .page-header {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 24px 36px 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
   .app-navigation-view .page-view .app-page-scroll {
     flex: 1 1 auto;
     min-height: 0;
@@ -190,15 +214,11 @@ function navigateTo(value) {
     padding: 24px 36px 36px;
   }
 
-  .app-page .page-header {
-    font-size: 28px;
-    font-weight: 600;
-    margin-top: 0;
-    margin-bottom: 24px;
-    color: var(--text-primary);
-  }
-
   @media (max-width: 640px) {
+    .app-navigation-view .page-view .page-header {
+      padding: 12px 16px 0;
+    }
+
     .app-page {
       padding: 12px 16px 16px;
     }
