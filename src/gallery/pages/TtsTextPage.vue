@@ -6,7 +6,7 @@
 
     <div class="tts-field">
       <WinTextBox
-        v-model:text="text"
+        v-model:Text="text"
         :Header="t('text.input-text')"
         :PlaceholderText="t('text.input-placeholder')"
         AcceptsReturn
