@@ -21,6 +21,7 @@ export default {
   "text.generating": "生成中...",
   "text.loading": "正在生成语音，请稍候...",
   "text.download": "下载音频文件",
+  "text.clear": "清空结果",
   "text.error-empty": "请输入要转换的文本内容",
   "text.error-file-type": "请选择txt格式的文本文件",
   "text.error-file-size": "文件大小不能超过500KB",

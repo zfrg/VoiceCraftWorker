@@ -75,11 +75,17 @@
 
     <div v-if="audioUrl" class="tts-result">
       <audio :src="audioUrl" class="tts-audio" controls></audio>
-      <WinButton
-        class="tts-download"
-        Style="SubtleButtonStyle"
-        :Content="t('text.download')"
-        @Click="onDownload" />
+      <div class="tts-result-buttons">
+        <WinButton
+          class="tts-result-button"
+          Style="AccentButtonStyle"
+          :Content="t('text.download')"
+          @Click="onDownload" />
+        <WinButton
+          class="tts-result-button"
+          :Content="t('text.clear')"
+          @Click="onClearResult" />
+      </div>
     </div>
   </div>
 </template>
@@ -137,6 +143,16 @@ async function onGenerate() {
     isGenerating.value = false;
     loadingText.value = t('text.loading');
   }
+}
+
+function onClearResult() {
+  if (!audioUrl.value && !text.value) return;
+  if (audioUrl.value) {
+    URL.revokeObjectURL(audioUrl.value);
+    audioUrl.value = null;
+  }
+  text.value = '';
+  successMessage.value = '';
 }
 
 function onDownload() {
@@ -205,7 +221,15 @@ function onDownload() {
   margin-bottom: 16px;
 }
 
-.tts-download {
+.tts-result-buttons {
+  display: flex;
+  gap: 12px;
   width: 100%;
+}
+
+.tts-result-button {
+  flex: 1 1 0;
+  width: 50%;
+  min-width: 0;
 }
 </style>
