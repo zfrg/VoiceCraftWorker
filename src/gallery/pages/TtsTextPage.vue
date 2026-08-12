@@ -146,9 +146,12 @@ async function onGenerate() {
 }
 
 function onClearResult() {
-  if (!audioUrl.value) return;
-  URL.revokeObjectURL(audioUrl.value);
-  audioUrl.value = null;
+  if (!audioUrl.value && !text.value) return;
+  if (audioUrl.value) {
+    URL.revokeObjectURL(audioUrl.value);
+    audioUrl.value = null;
+  }
+  text.value = '';
   successMessage.value = '';
 }
 
