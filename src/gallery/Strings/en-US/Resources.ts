@@ -21,6 +21,7 @@ export default {
   "text.generating": "Generating...",
   "text.loading": "Generating speech, please wait...",
   "text.download": "Download audio",
+  "text.clear": "Clear result",
   "text.error-empty": "Please enter the text to convert",
   "text.error-file-type": "Please select a txt text file",
   "text.error-file-size": "File size cannot exceed 500KB",

@@ -19,9 +19,9 @@
           HorizontalScrollMode="Disabled"
           HorizontalScrollBarVisibility="Disabled">
           <div class="app-page">
-            <TtsTextPage v-if="selectedNav === 'text'" />
-            <TtsFilePage v-else-if="selectedNav === 'file'" />
-            <SettingsPage v-else />
+            <TtsTextPage v-show="selectedNav === 'text'" />
+            <TtsFilePage v-show="selectedNav === 'file'" />
+            <SettingsPage v-show="selectedNav === 'settings'" />
           </div>
         </WinScrollViewer>
       </div>
